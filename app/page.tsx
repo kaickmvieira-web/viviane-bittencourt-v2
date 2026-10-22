@@ -92,6 +92,11 @@ export default function Home() {
   // Guarda qual card recebeu o pointerDown
   const cardPressionadoRef = useRef<number | null>(null);
 
+  // Controle dedicado para toque em celular/tablet
+  const toqueInicioXRef = useRef(0);
+  const toqueScrollInicialRef = useRef(0);
+  const toqueMoveuRef = useRef(false);
+
   // =========================================
   // PESSOAS ONLINE
   // =========================================
@@ -175,12 +180,14 @@ export default function Home() {
 }, []);
 
   // =========================================
-  // ARRASTE DOS DEPOIMENTOS — MOUSE + TOQUE
+  // ARRASTE DOS DEPOIMENTOS — MOUSE
   // =========================================
 
   function iniciarArraste(
     evento: React.PointerEvent<HTMLDivElement>
   ) {
+    if (evento.pointerType !== "mouse") return;
+
     const container = containerRef.current;
     if (!container) return;
 
@@ -198,6 +205,7 @@ export default function Home() {
   function moverArraste(
     evento: React.PointerEvent<HTMLDivElement>
   ) {
+    if (evento.pointerType !== "mouse") return;
     if (!arrastandoRef.current) return;
 
     const container = containerRef.current;
@@ -231,6 +239,7 @@ export default function Home() {
   function finalizarArraste(
     evento: React.PointerEvent<HTMLDivElement>
   ) {
+    if (evento.pointerType !== "mouse") return;
     if (!arrastandoRef.current) return;
 
     arrastandoRef.current = false;
@@ -240,8 +249,6 @@ export default function Home() {
       evento.currentTarget.releasePointerCapture(evento.pointerId);
     }
 
-    // Um toque/clique curto abre o zoom.
-    // Um gesto horizontal apenas arrasta a esteira.
     if (
       !moveuRef.current &&
       cardPressionadoRef.current !== null
@@ -250,6 +257,72 @@ export default function Home() {
     }
 
     moveuRef.current = false;
+    cardPressionadoRef.current = null;
+  }
+
+  // =========================================
+  // ARRASTE DOS DEPOIMENTOS — TOQUE REAL
+  // =========================================
+
+  function iniciarToque(
+    evento: React.TouchEvent<HTMLDivElement>
+  ) {
+    const container = containerRef.current;
+    const toque = evento.touches[0];
+
+    if (!container || !toque) return;
+
+    arrastandoRef.current = true;
+    toqueInicioXRef.current = toque.clientX;
+    toqueScrollInicialRef.current = container.scrollLeft;
+    toqueMoveuRef.current = false;
+  }
+
+  function moverToque(
+    evento: React.TouchEvent<HTMLDivElement>
+  ) {
+    const container = containerRef.current;
+    const toque = evento.touches[0];
+
+    if (!container || !toque || !arrastandoRef.current) return;
+
+    const distancia = toque.clientX - toqueInicioXRef.current;
+
+    if (Math.abs(distancia) > 7) {
+      toqueMoveuRef.current = true;
+    }
+
+    container.scrollLeft =
+      toqueScrollInicialRef.current - distancia;
+
+    const metade = container.scrollWidth / 2;
+
+    if (metade > 0) {
+      if (container.scrollLeft >= metade) {
+        container.scrollLeft -= metade;
+        toqueScrollInicialRef.current -= metade;
+      }
+
+      if (container.scrollLeft <= 0 && distancia > 0) {
+        container.scrollLeft += metade;
+        toqueScrollInicialRef.current += metade;
+      }
+    }
+  }
+
+  function finalizarToque() {
+    if (!arrastandoRef.current) return;
+
+    arrastandoRef.current = false;
+
+    if (
+      !toqueMoveuRef.current &&
+      cardPressionadoRef.current !== null
+    ) {
+      setDepoimentoAberto(cardPressionadoRef.current);
+    }
+
+    toqueMoveuRef.current = false;
     cardPressionadoRef.current = null;
   }
 
@@ -447,13 +520,17 @@ export default function Home() {
       onPointerMove={moverArraste}
       onPointerUp={finalizarArraste}
       onPointerCancel={finalizarArraste}
+      onTouchStart={iniciarToque}
+      onTouchMove={moverToque}
+      onTouchEnd={finalizarToque}
+      onTouchCancel={finalizarToque}
       className={
         arrastando
           ? "cursor-grabbing select-none overflow-x-auto"
           : "cursor-grab select-none overflow-x-auto"
       }
       style={{
-        touchAction: "pan-y",
+        touchAction: "none",
         WebkitOverflowScrolling: "touch",
         scrollbarWidth: "none",
         msOverflowStyle: "none",
