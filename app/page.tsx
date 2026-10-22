@@ -147,35 +147,26 @@ export default function Home() {
       ultimoTempo = tempo;
 
       if (!arrastandoRef.current) {
-        posicaoAutomatica = Math.max(
-          posicaoAutomatica,
-          container.scrollLeft
-        );
-
+        posicaoAutomatica = container.scrollLeft;
         posicaoAutomatica += velocidade * delta;
 
         const metade = container.scrollWidth / 2;
 
-        if (
-          metade > 0 &&
-          posicaoAutomatica >= metade
-        ) {
+        if (metade > 0 && posicaoAutomatica >= metade) {
           posicaoAutomatica -= metade;
         }
 
         container.scrollLeft = posicaoAutomatica;
       } else {
+        // Enquanto o usuário arrasta, o automático acompanha
+        // a posição atual sem disputar o scroll.
         posicaoAutomatica = container.scrollLeft;
       }
 
-      animacao = requestAnimationFrame(
-        moverAutomaticamente
-      );
+      animacao = requestAnimationFrame(moverAutomaticamente);
     }
 
-    animacao = requestAnimationFrame(
-      moverAutomaticamente
-    );
+    animacao = requestAnimationFrame(moverAutomaticamente);
 
     return () => {
       cancelAnimationFrame(animacao);
@@ -183,14 +174,13 @@ export default function Home() {
   }, []);
 
   // =========================================
-  // COMEÇA A ARRASTAR
+  // ARRASTE DOS DEPOIMENTOS — MOUSE + TOQUE
   // =========================================
 
   function iniciarArraste(
     evento: React.PointerEvent<HTMLDivElement>
   ) {
     const container = containerRef.current;
-
     if (!container) return;
 
     arrastandoRef.current = true;
@@ -198,20 +188,11 @@ export default function Home() {
 
     inicioXRef.current = evento.clientX;
     inicioCliqueXRef.current = evento.clientX;
-
-    scrollInicialRef.current =
-      container.scrollLeft;
-
+    scrollInicialRef.current = container.scrollLeft;
     moveuRef.current = false;
 
-    evento.currentTarget.setPointerCapture(
-      evento.pointerId
-    );
+    evento.currentTarget.setPointerCapture(evento.pointerId);
   }
-
-  // =========================================
-  // ARRASTANDO
-  // =========================================
 
   function moverArraste(
     evento: React.PointerEvent<HTMLDivElement>
@@ -219,23 +200,17 @@ export default function Home() {
     if (!arrastandoRef.current) return;
 
     const container = containerRef.current;
-
     if (!container) return;
 
-    const distancia =
-      evento.clientX - inicioXRef.current;
+    const distancia = evento.clientX - inicioXRef.current;
 
     if (
-      Math.abs(
-        evento.clientX -
-          inicioCliqueXRef.current
-      ) > 5
+      Math.abs(evento.clientX - inicioCliqueXRef.current) > 7
     ) {
       moveuRef.current = true;
     }
 
-    container.scrollLeft =
-      scrollInicialRef.current - distancia;
+    container.scrollLeft = scrollInicialRef.current - distancia;
 
     const metade = container.scrollWidth / 2;
 
@@ -245,19 +220,12 @@ export default function Home() {
         scrollInicialRef.current -= metade;
       }
 
-      if (
-        container.scrollLeft <= 0 &&
-        distancia > 0
-      ) {
+      if (container.scrollLeft <= 0 && distancia > 0) {
         container.scrollLeft += metade;
         scrollInicialRef.current += metade;
       }
     }
   }
-
-  // =========================================
-  // TERMINA O ARRASTE / ABRE O ZOOM
-  // =========================================
 
   function finalizarArraste(
     evento: React.PointerEvent<HTMLDivElement>
@@ -267,37 +235,24 @@ export default function Home() {
     arrastandoRef.current = false;
     setArrastando(false);
 
-    if (
-      evento.currentTarget.hasPointerCapture(
-        evento.pointerId
-      )
-    ) {
-      evento.currentTarget.releasePointerCapture(
-        evento.pointerId
-      );
+    if (evento.currentTarget.hasPointerCapture(evento.pointerId)) {
+      evento.currentTarget.releasePointerCapture(evento.pointerId);
     }
 
-    // Só abre se foi clique e não arraste
+    // Um toque/clique curto abre o zoom.
+    // Um gesto horizontal apenas arrasta a esteira.
     if (
       !moveuRef.current &&
       cardPressionadoRef.current !== null
     ) {
-      setDepoimentoAberto(
-        cardPressionadoRef.current
-      );
+      setDepoimentoAberto(cardPressionadoRef.current);
     }
 
     moveuRef.current = false;
     cardPressionadoRef.current = null;
   }
 
-  // =========================================
-  // CARD RECEBEU POINTER DOWN
-  // =========================================
-
-  function pressionarCard(
-    numero: number
-  ) {
+  function pressionarCard(numero: number) {
     cardPressionadoRef.current = numero;
   }
 
@@ -453,169 +408,145 @@ export default function Home() {
 
 
       {/* =========================================
-          DEPOIMENTOS
-      ========================================= */}
+    DEPOIMENTOS
+========================================= */}
 
-      <section
-        id="depoimentos"
-        className="px-6 pb-32 md:px-16 md:pb-40"
-      >
+<section
+  id="depoimentos"
+  className="px-6 pb-32 md:px-16 md:pb-40"
+>
+  <div className="mx-auto max-w-[1400px]">
 
-        <div className="mx-auto max-w-[1400px]">
+    {/* TÍTULO */}
+    <div className="mb-12 flex items-end justify-between gap-10">
 
-          <div className="mb-12 flex items-end justify-between gap-10">
+      <h2 className="max-w-[760px] font-serif text-[46px] font-normal leading-[0.95] tracking-[-0.02em] md:text-[64px]">
+        relatos de quem
+        <br />
 
-            <h2 className="max-w-[760px] font-serif text-[46px] font-normal leading-[0.95] tracking-[-0.02em] md:text-[64px]">
+        <em className="font-normal italic text-vinho">
+          viveu essa experiência
+        </em>
+      </h2>
 
-              relatos de quem
-<br />
+      <p className="hidden pb-2 font-sans text-[9px] uppercase tracking-[0.22em] md:block">
+        Arraste ou clique para ampliar
+      </p>
 
-<em className="font-normal italic text-vinho">
-  viveu essa experiência
-</em>
-
-            </h2>
-
-            <p className="hidden pb-2 font-sans text-[9px] uppercase tracking-[0.22em] md:block">
-              Arraste ou clique para ampliar
-            </p>
-
-          </div>
+    </div>
 
 
-          {/* =========================================
-              ESTEIRA
-          ========================================= */}
+    {/* =========================================
+        ESTEIRA
+    ========================================= */}
+
+    <div
+      ref={containerRef}
+      onPointerDown={iniciarArraste}
+      onPointerMove={moverArraste}
+      onPointerUp={finalizarArraste}
+      onPointerCancel={finalizarArraste}
+      className={
+        arrastando
+          ? "cursor-grabbing select-none overflow-x-auto"
+          : "cursor-grab select-none overflow-x-auto"
+      }
+      style={{
+        touchAction: "pan-y",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+    >
+
+      <div className="flex w-max">
+
+        {/* PRIMEIRA SEQUÊNCIA */}
+
+        <div className="flex shrink-0 gap-5 pr-5">
 
           <div
-            ref={containerRef}
-            onPointerDown={iniciarArraste}
-            onPointerMove={moverArraste}
-            onPointerUp={finalizarArraste}
-            onPointerCancel={finalizarArraste}
-            className={
-              arrastando
-                ? "cursor-grabbing select-none overflow-x-scroll"
-                : "cursor-grab select-none overflow-x-scroll"
-            }
-            style={{
-              touchAction: "pan-y",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
-          >
+            onPointerDown={() => pressionarCard(0)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
 
-            <div className="flex w-max">
+          <div
+            onPointerDown={() => pressionarCard(1)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
 
-              {/* PRIMEIRA SEQUÊNCIA */}
+          <div
+            onPointerDown={() => pressionarCard(2)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
 
-              <div className="flex shrink-0 gap-5 pr-5">
+          <div
+            onPointerDown={() => pressionarCard(3)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
 
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(0)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(1)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(2)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(3)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(4)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-              </div>
-
-
-              {/* SEGUNDA SEQUÊNCIA */}
-
-              <div
-                className="flex shrink-0 gap-5 pr-5"
-                aria-hidden="true"
-              >
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(0)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(1)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(2)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(3)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-                <div
-                  onPointerDown={() =>
-                    pressionarCard(4)
-                  }
-                  className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
-                />
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          {/* =========================================
-              BOTÃO
-          ========================================= */}
-
-          <div className="mt-12 flex justify-center">
-
-            <button
-              type="button"
-              className="border border-vinho-escuro px-8 py-4 font-sans text-[10px] uppercase tracking-[0.25em] transition hover:bg-vinho hover:text-creme"
-            >
-              Ver mais
-            </button>
-
-          </div>
+          <div
+            onPointerDown={() => pressionarCard(4)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
 
         </div>
 
-      </section>
+
+        {/* SEGUNDA SEQUÊNCIA — CÓPIA PARA LOOP INFINITO */}
+
+        <div
+          className="flex shrink-0 gap-5 pr-5"
+          aria-hidden="true"
+        >
+
+          <div
+            onPointerDown={() => pressionarCard(0)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
+
+          <div
+            onPointerDown={() => pressionarCard(1)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
+
+          <div
+            onPointerDown={() => pressionarCard(2)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
+
+          <div
+            onPointerDown={() => pressionarCard(3)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
+
+          <div
+            onPointerDown={() => pressionarCard(4)}
+            className="h-[360px] w-[260px] shrink-0 border border-vinho-escuro/30 bg-vinho/5 md:h-[420px] md:w-[300px]"
+          />
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    {/* BOTÃO */}
+
+    <div className="mt-12 flex justify-center">
+
+      <button
+        type="button"
+        className="border border-vinho-escuro px-8 py-4 font-sans text-[10px] uppercase tracking-[0.25em] transition hover:bg-vinho hover:text-creme"
+      >
+        Ver mais
+      </button>
+
+    </div>
+
+  </div>
+</section>
       {/* =========================================
     INTRODUÇÃO DAS CONSULTAS
 ========================================= */}
