@@ -120,58 +120,59 @@ export default function Home() {
     };
   }, []);
 
-  // =========================================
-  // MOVIMENTO AUTOMÁTICO
-  // =========================================
-
   useEffect(() => {
-    let animacao: number;
-    let ultimoTempo: number | null = null;
+  let animacao: number;
+  let ultimoTempo = performance.now();
 
-    const velocidade = 25;
-    let posicaoAutomatica = 0;
+  // Posição virtual da esteira.
+  // Mantemos esse valor separado do scrollLeft para não perder
+  // os valores fracionários no build de produção.
+  let posicaoAutomatica = containerRef.current?.scrollLeft ?? 0;
 
-    function moverAutomaticamente(tempo: number) {
-      const container = containerRef.current;
+  const velocidade = 25;
 
-      if (!container) {
-        animacao = requestAnimationFrame(moverAutomaticamente);
-        return;
-      }
+  function moverAutomaticamente(tempo: number) {
+    const container = containerRef.current;
 
-      if (ultimoTempo === null) {
-        ultimoTempo = tempo;
-      }
+    const delta = Math.min(
+      (tempo - ultimoTempo) / 1000,
+      0.1
+    );
 
-      const delta = (tempo - ultimoTempo) / 1000;
-      ultimoTempo = tempo;
+    ultimoTempo = tempo;
 
-      if (!arrastandoRef.current) {
+    if (container) {
+      const metade = container.scrollWidth / 2;
+
+      if (arrastandoRef.current) {
+        // Enquanto o usuário arrasta, apenas acompanha
+        // a posição escolhida por ele.
         posicaoAutomatica = container.scrollLeft;
+      } else if (metade > 0) {
+        // Fora do arraste, movimenta usando a posição virtual.
         posicaoAutomatica += velocidade * delta;
 
-        const metade = container.scrollWidth / 2;
-
-        if (metade > 0 && posicaoAutomatica >= metade) {
+        if (posicaoAutomatica >= metade) {
           posicaoAutomatica -= metade;
         }
 
         container.scrollLeft = posicaoAutomatica;
-      } else {
-        // Enquanto o usuário arrasta, o automático acompanha
-        // a posição atual sem disputar o scroll.
-        posicaoAutomatica = container.scrollLeft;
       }
-
-      animacao = requestAnimationFrame(moverAutomaticamente);
     }
 
-    animacao = requestAnimationFrame(moverAutomaticamente);
+    animacao = requestAnimationFrame(
+      moverAutomaticamente
+    );
+  }
 
-    return () => {
-      cancelAnimationFrame(animacao);
-    };
-  }, []);
+  animacao = requestAnimationFrame(
+    moverAutomaticamente
+  );
+
+  return () => {
+    cancelAnimationFrame(animacao);
+  };
+}, []);
 
   // =========================================
   // ARRASTE DOS DEPOIMENTOS — MOUSE + TOQUE
